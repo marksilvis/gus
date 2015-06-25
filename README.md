@@ -1,1 +1,1 @@
-GUS - a URL shortener written in Go
+A URL shortener written in Go
