@@ -1,0 +1,9 @@
+# compiled items
+*.o
+*.a
+*.so
+*.exe
+*.test
+
+# sqlite file
+*.db
