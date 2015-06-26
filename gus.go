@@ -43,7 +43,7 @@ func shrinkUrl(id int, c chan int) {
 
 func newUrlMapping(url string, db *sql.DB) string {
     var lastId int
-    query := "select last_insert_rowid();"
+    query := "select id from url_mappings order by id desc limit 1;"
     err := db.QueryRow(query).Scan(&lastId)
     if err != nil {
         lastId = 0
