@@ -5,7 +5,7 @@
 
  @font-face {
     font-family: Junction;
-    src: url('/fonts/Junction.otf') format('opentype');
+    src: url('/typeface/Junction.otf') format('opentype');
     font-weight: normal;
     font-style: normal;
  }

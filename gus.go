@@ -5,6 +5,7 @@ import (
     "fmt"
     "log"
     "strings"
+    "math"
     "net/http"
     "html/template"
     "database/sql"
@@ -16,21 +17,22 @@ var base62 [62]byte
 var base10 map[byte]int = make(map[byte]int)
 
 func embiggen(short string, db *sql.DB) (url string, err error) {
-    query := "select url from url_mappings where short=?;"
-    err = db.QueryRow(query, short).Scan(&url)
+    id := getId(short)
+    query := "select url from url_mappings where id=?;"
+    err = db.QueryRow(query, id).Scan(&url)
     return
 }
 
-// func getId(path string) int {
-//     var id float64
-//     split := strings.Split(path, "")
-//     for i, v := range split {
-//         rune := []byte(v)
-//         w := base10[rune[0]]
-//         id += float64(w)*math.Pow(62, float64(len(split)-i))
-//     }
-//     return int(id)
-// }
+func getId(path string) int {
+    var id float64
+    split := strings.Split(path, "")
+    for i, v := range split {
+        rune := []byte(v)
+        w := base10[rune[0]]
+        id += float64(w)*math.Pow(62, float64(len(split)-(i+1)))
+    }
+    return int(id)
+}
 
 func shrinkUrl(id int, c chan int) {
     for id != 0 {
@@ -79,12 +81,15 @@ func handlePath(w http.ResponseWriter, r *http.Request, db *sql.DB, path string)
 
 func handleRoot(w http.ResponseWriter, r *http.Request, db *sql.DB) {
     if r.Method == "GET" {
-        http.ServeFile(w, r, "./resources/html/index.html")
+        http.ServeFile(w, r, "./resources/index.html")
     } else if r.Method == "POST" {
         url := r.FormValue("url")
         escaped := template.JSEscapeString(url)
         if escaped != url {
             fmt.Fprintln(w, "Sorry, no XSS attacks")
+            return
+        } else if len(escaped) < 2 {
+            fmt.Fprintln(w, "Error: invalid url")
             return
         }
         escaped = strings.TrimPrefix(escaped, "http://")
@@ -137,7 +142,10 @@ func main() {
         base10[v] = i
     }
 
+    http.Handle("/stylesheets/", http.StripPrefix("/stylesheets/", http.FileServer(http.Dir("./resources/stylesheets/"))))
+    http.Handle("/typeface/", http.StripPrefix("/typeface/", http.FileServer(http.Dir("./resources/typeface/"))))
     http.Handle("/", handler(db))
+
     // http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("./css/"))))
     log.Fatal(http.ListenAndServe(port, nil))
 }
